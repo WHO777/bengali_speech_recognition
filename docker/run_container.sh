@@ -3,7 +3,8 @@ docker run \
 -p 8869:8869 \
 --gpus all \
 --runtime=nvidia \
---mount type=bind,source=$KAGGLE_ROOT/bengali_speech_recognition,target=/app \
+-v $DATASETS_ROOT:/app/datasets \
+-v $KAGGLE_ROOT/bengali_speech_recognition:/app \
 --network="host" \
 --shm-size=5g \
 --ulimit memlock=-1 \
