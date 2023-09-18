@@ -1,4 +1,5 @@
 import enum
+from types import MappingProxyType
 
 
 class Language(enum.Enum):
@@ -6,7 +7,17 @@ class Language(enum.Enum):
     ENGLISH = enum.auto()
 
 
-LANGUAGE_TO_VOCABULARY_MAP = {
-    Language.RUSSIAN: [s for s in "абвгдеёжзийклмнопрстуфхцчшщъыьэюя'!?"],
-    Language.ENGLISH: [s for s in "abcdefghijklmnopqrstuvwxyz'!?"]
-}
+RUSSIAN_VOCABULARY = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя'!?"
+ENGLISH_VOCABULARY = "abcdefghijklmnopqrstuvwxyz'!?"
+
+STR_LANGUAGE_TO_ENUM_MAP = MappingProxyType({
+    'russian': Language.RUSSIAN,
+    'english': Language.ENGLISH,
+})
+
+LANGUAGE_TO_VOCABULARY_MAP = MappingProxyType({
+    Language.RUSSIAN:
+    tuple(RUSSIAN_VOCABULARY),
+    Language.ENGLISH:
+    tuple(ENGLISH_VOCABULARY),
+})
