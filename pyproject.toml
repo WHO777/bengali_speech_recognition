@@ -7,11 +7,14 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.8.1"
+jiwer = "^3.0.3"
+pandas = "^1.0.0"
 
 
 [tool.poetry.group.dev.dependencies]
 yapf = "^0.40.1"
 wemake-python-styleguide = "^0.18.0"
+mypy = "^1.5.1"
 
 [build-system]
 requires = ["poetry-core"]
