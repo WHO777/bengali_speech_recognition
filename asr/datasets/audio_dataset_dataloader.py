@@ -6,7 +6,7 @@ import tensorflow as tf
 from asr.datasets import load_audios_and_labels
 
 
-class AudioDatasetLoader(load_audios_and_labels.LoadAudiosAndLabels):
+class AudioDatasetLoader(load_audios_and_labels.AudiosAndLabelsLoader):
 
     def __init__(self, root_dir: str, *args, **kwargs):
         df_path = Path(root_dir) / 'df.csv'

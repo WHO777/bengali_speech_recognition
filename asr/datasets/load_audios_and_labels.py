@@ -7,7 +7,7 @@ import tensorflow_io as tfio
 from asr.datasets import base_dataloaders, common
 
 
-class LoadAudiosAndLabels(base_dataloaders.TextDataLoader):
+class AudiosAndLabelsLoader(base_dataloaders.TextDataLoader):
     MAX_AUDIO_LEN: int = 352960
     MAX_LABEL_LEN: int = 180
 
@@ -40,7 +40,7 @@ class LoadAudiosAndLabels(base_dataloaders.TextDataLoader):
                  cache: bool = False,
                  shuffle: Optional[int] = 64,
                  seed: Optional[int] = 43):
-        super(LoadAudiosAndLabels, self).__init__()
+        super(AudiosAndLabelsLoader, self).__init__()
         self.audio_paths = audio_paths
         if labels is not None:
             language_enum = common.STR_LANGUAGE_TO_ENUM_MAP.get(language, None)
