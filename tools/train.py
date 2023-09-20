@@ -4,11 +4,12 @@ from absl import app
 from asr import utils
 import tensorflow as tf
 from pathlib import Path
-from asr.losses import ctc_loss
-from asr.schedulers import warmup_cosine_scheduler
-from asr.models import deep_speech_2, ctc_decoder
-from asr.datasets import audio_dataset_dataloader
-from asr.metrics.word_error_rate import WordErrorRate
+from asr.losses import get_loss
+from asr.schedulers import get_scheduler
+from asr.optimizers import get_optimizer
+from asr.models import get_model
+from asr.datasets import get_dataloader
+from asr.metrics import get_metrics
 
 FLAGS = flags.FLAGS
 
@@ -22,15 +23,18 @@ def define_flags():
                         default=None,
                         help='dir where all training files will be saved.',
                         required=True)
+    flags.DEFINE_string('checkpoint',
+                        default=None,
+                        help='save model path')
 
 
 def main(_):
-    config_path = FLAGS.config
-    output_dir = FLAGS.output_dir
+    config_path = Path(FLAGS.config)
+    output_dir = Path(FLAGS.output_dir)
 
-    assert Path(config_path).is_file(
+    assert config_path.is_file(
     ), f'Config file found error. No such file {FLAGS.config}.'
-    if not Path(output_dir).is_dir():
+    if not output_dir.is_dir():
         Path(output_dir).mkdir(parents=True)
 
     logger = utils.create_logger(output_dir, name='train')
@@ -43,41 +47,36 @@ def main(_):
 
     logger.info(f'Num replicas in sync: {strategy.num_replicas_in_sync}')
 
-    precision = utils.get_precision(config.get('precision', 'fp32'))
+    train_config = config['train']
+
+    precision = utils.get_precision(train_config.get('precision', 'fp32'))
     policy = tf.keras.mixed_precision.Policy(precision)
     tf.keras.mixed_precision.set_global_policy(policy)
-
     logger.info(f'Precision: {policy.compute_dtype}')
 
-    train_loader = audio_dataset_dataloader.AudioDatasetLoader(
-        **(config['data']['params']))
-    train_ds = train_loader.get_dataset()
+    train_dataloader = get_dataloader(config['train_dataloader'])
+    train_ds = train_dataloader.get_dataset()
+    if config.get('val_dataloader', None) is not None:
+        val_dataloader = get_dataloader(config['val_dataloader'])
+        val_ds = val_dataloader.get_dataset()
+    else:
+        val_ds = None
 
-    loss = ctc_loss.ctc_loss
+    loss = get_loss(config['loss'])
+    logger.info(f'Loss: {loss.name if hasattr(loss, "name") else loss.__class__.__name__}')
 
-    logger.info(f'Loss: {loss.__name__}')
+    scheduler = get_scheduler(config['scheduler'])
+    logger.info(f'Scheduler: {scheduler.name if hasattr(scheduler, "name") else scheduler.__class__.__name__}')
 
-    scheduler = warmup_cosine_scheduler.WarmupCosineScheduler(10, 1e-4, 10)
-
-    logger.info(f'Scheduler params: {scheduler.get_config()}')
-
-    optimizer = tf.keras.optimizers.Adam(learning_rate=scheduler)
-
-    logger.info(f'Optimizer params: {optimizer.get_config()}')
+    optimizer = get_optimizer(config['optimizer'])
+    logger.info(f'Optimizer params: {optimizer.name if hasattr(optimizer, "name") else optimizer.__class__.__name__}')
 
     with strategy.scope():
-        decoder = ctc_decoder.CTCDecoder(train_loader.num_to_char)
-        metrics = [WordErrorRate(decoder)]
-        model = deep_speech_2.DeepSpeech2(**(config['model']['params']))
+        metrics = get_metrics(config['metrics'])
+        model = get_model(config['model'])
         model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
-    model.fit(train_ds, epochs=10)
-    decoder = ctc_decoder.CTCDecoder(train_loader.num_to_char)
-    m = WordErrorRate(decoder)
-    for x, y in train_ds.take(1):
-        outputs = model(x)
-        print(m(y, outputs))
-
+    # model.fit(train_ds, epochs=train_config['epochs'], validation_data=val_ds)
 
     # fig = plt.figure(figsize=(8, 5))
     # for batch in train_ds.take(1):
