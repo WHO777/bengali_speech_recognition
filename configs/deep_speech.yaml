@@ -2,8 +2,8 @@ seed: 43
 
 vocab_size: 41
 
-data:
-  type: 'AudioDataset'
+train_dataloader:
+  type: 'AudioDatasetLoader'
   params:
     root_dir: '/app/datasets/audio_dataset/'
     batch_size: 3
@@ -20,8 +20,7 @@ model:
 optimizer:
   type: Adam
   params:
-    learning_rate: 1e-4
-    beta: 0.9
+    learning_rate: 0.001
 
 loss:
   type: CTCLoss
@@ -37,6 +36,13 @@ scheduler:
 
 metrics:
   - type: WordErrorRate
+    params:
+      decoder:
+        type: CTCDecoder
 
 callbacks:
   ...
+
+train:
+  precision: 'fp32'
+  epochs: 50
