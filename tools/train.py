@@ -25,7 +25,7 @@ def define_flags():
                         required=True)
     flags.DEFINE_string('checkpoint',
                         default=None,
-                        help='save model path')
+                        help='saved model path')
 
 
 def main(_):
@@ -72,57 +72,16 @@ def main(_):
     logger.info(f'Optimizer params: {optimizer.name if hasattr(optimizer, "name") else optimizer.__class__.__name__}')
 
     with strategy.scope():
-        metrics = get_metrics(config['metrics'])
+        metrics = get_metrics(config['metrics'], num_to_char_lookup=train_dataloader.num_to_char)
         model = get_model(config['model'])
         model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
-    # model.fit(train_ds, epochs=train_config['epochs'], validation_data=val_ds)
+    if FLAGS.checkpoint is not None:
+        model.load_checkpoint(FLAGS.checkpoint, logger=logger)
 
-    # fig = plt.figure(figsize=(8, 5))
-    # for batch in train_ds.take(1):
-    #     spectrogram = batch[0][0].numpy()
-    #     print(spectrogram)
-    #     spectrogram = np.array([np.trim_zeros(x) for x in np.transpose(spectrogram)])
-    #     label = batch[1][0]
-    #     # Spectrogram
-    #     label = 'kekw'
-    #     ax = plt.subplot(2, 1, 1)
-    #     ax.imshow(spectrogram, vmax=1)
-    #     ax.set_title(label)
-    #     ax.axis("off")
-    #     # Wav
-    #     file = tf.io.read_file('/app/datasets/audio_dataset/audio_files/000073e5-e343-4b0f-a3c0-2828de3dbe37.wav')
-    #     audio, _ = tf.audio.decode_wav(file)
-    #     audio = audio.numpy()
-    #     ax = plt.subplot(2, 1, 2)
-    #     plt.plot(audio)
-    #     ax.set_title("Signal Wave")
-    #     ax.set_xlim(0, len(audio))
-    #     fig.savefig('kekw.png')
-
-    # row, col = 3, 3
-    # plt.figure(figsize=(col * 5, row * 3))
-    # imgs, _ = next(train_ds.take(1).as_numpy_iterator())
-    # for idx in range(row * col):
-    #     ax = plt.subplot(row, col, idx + 1)
-    #     print(imgs.shape)
-    #     lid.specshow(imgs[idx],
-    #                  sr=16000,
-    #                  hop_length=921,
-    #                  fmin=0,
-    #                  fmax=8000,
-    #                  x_axis='time',
-    #                  y_axis='mel',
-    #                  cmap='coolwarm')
-    # plt.tight_layout()
-    # plt.show()
-    # plt.savefig('kekw.png')
+    model.fit(train_ds, epochs=train_config['epochs'], validation_data=val_ds)
 
 
 if __name__ == '__main__':
-    from asr.models import ctc_decoder
-    import matplotlib.pyplot as plt
-    import numpy as np
-    import librosa.display as lid
     define_flags()
     app.run(main)
