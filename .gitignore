@@ -1,3 +1,5 @@
+configs
+checkpoints
 .idea
 .venv
 __pycache__

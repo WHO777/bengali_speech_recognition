@@ -1,5 +1,7 @@
 import tensorflow as tf
 
+from asr import utils
+
 
 class DeepSpeech2(tf.keras.Model):
 
@@ -13,6 +15,19 @@ class DeepSpeech2(tf.keras.Model):
         super(DeepSpeech2, self).__init__(*args, **kwargs)
         self._model = self._build_model(input_dim, output_dim, rnn_layers,
                                         rnn_units)
+
+    def load_checkpoint(self,
+                        checkpoint_path,
+                        skip_mismatch=False,
+                        by_name=False,
+                        options=None,
+                        logger=None):
+        return utils.load_checkpoint(self._model,
+                                     checkpoint_path,
+                                     skip_mismatch=skip_mismatch,
+                                     by_name=by_name,
+                                     options=options,
+                                     logger=logger)
 
     def call(self, inputs, training=None, mask=None):
         return self._model(inputs, training=training, mask=mask)

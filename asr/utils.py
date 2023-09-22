@@ -2,6 +2,7 @@ import functools
 import logging
 import platform
 import sys
+import traceback
 from pathlib import Path
 from typing import NoReturn
 
@@ -76,3 +77,47 @@ def create_logger(output_dir=None, name=''):
         logger.addHandler(file_handler)
 
     return logger
+
+
+def load_checkpoint(model,
+                    checkpoint_path,
+                    skip_mismatch=False,
+                    by_name=False,
+                    options=None,
+                    logger=None):
+    if Path(checkpoint_path).is_dir():
+        checkpoint_path = str(
+            Path(checkpoint_path) / 'variables' / 'variables')
+    try:
+        model.load_weights(checkpoint_path,
+                           skip_mismatch=skip_mismatch,
+                           by_name=by_name,
+                           options=options)
+        if logger is not None:
+            logger.info(
+                f'Successfully restored weights from {checkpoint_path} checkpoint.'
+            )
+    except Exception as err:
+        traceback.print_tb(err.__traceback__)
+        if logger is not None:
+            logger.warning(
+                'Weights cannot be restored completely from checkpoint {}, an error occurred. '
+                'Trying to restore all weights except the weights of the last layer.'
+            )
+        no_top_model = tf.keras.Model(model.layers[0].input,
+                                      model.layers[-2].output)
+        try:
+            for i in range(len(no_top_model.layers)):
+                model.layers[i].set_weights(
+                    no_top_model.layers[i].get_weights())
+            if logger is not None:
+                logger.warning(
+                    f'All weights except the weights of the last layers were restored. '
+                    f'The weights of the last layer cannot be restored from the checkpoint {checkpoint_path}.'
+                )
+        except Exception as err:
+            traceback.print_tb(err.__traceback__)
+            if logger is not None:
+                logger.error(
+                    f'Weights cannot be restored from the checkpoint {checkpoint_path}.'
+                )

@@ -2,11 +2,11 @@ import traceback
 from typing import Dict
 
 from asr.datasets.audio_dataset_dataloader import AudioDatasetLoader
-from asr.datasets.base_dataloaders import BaseDataLoader
+from asr.datasets.base_dataloaders import TextDataLoader
 from asr.datasets.load_audios_and_labels import AudiosAndLabelsLoader
 
 
-def get_dataloader(config: Dict) -> BaseDataLoader:
+def get_dataloader(config: Dict) -> TextDataLoader:
     dataloader_name = config['type']
     dataloader_params = config.get('params', {})
     try:

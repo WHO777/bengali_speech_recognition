@@ -14,7 +14,7 @@ def _parse_singe_config(
     metric_name = config['type']
     metric_params = config.get('params', {})
     decoder_cfg = metric_params.pop('decoder', None)
-    if decoder_cfg is not None and num_to_char_lookup is None:
+    if decoder_cfg is not None and num_to_char_lookup is not None:
         decoder_name = decoder_cfg['type']
         decoder_params = decoder_cfg.get('params', {})
         try:
