@@ -30,8 +30,8 @@ class AudiosAndLabelsLoader(base_dataloaders.TextDataLoader):
                  f_max: int = 8000,
                  language: str = 'russian',
                  max_label_len: int = MAX_LABEL_LEN,
-                 sos_token: str = SOS_TOKEN,
-                 eos_token: str = EOS_TOKEN,
+                 sos_token: Optional[str] = SOS_TOKEN,
+                 eos_token: Optional[str] = EOS_TOKEN,
                  pad_token: str = PAD_TOKEN,
                  space_token: str = SPACE_TOKEN,
                  oov_token: str = OOV_TOKEN,
@@ -51,7 +51,9 @@ class AudiosAndLabelsLoader(base_dataloaders.TextDataLoader):
                     f'Language "{language}" is not supported. Supported languages: {supported_languages}'
                 )
             vocabulary = common.LANGUAGE_TO_VOCABULARY_MAP[language_enum]
-            vocabulary += (sos_token, eos_token, pad_token, space_token)
+            vocabulary += tuple(token for token in (sos_token, eos_token,
+                                                    pad_token, space_token)
+                                if token is not None)
             self.char_to_num = tf.keras.layers.StringLookup(
                 vocabulary=vocabulary, oov_token=oov_token)
             self.num_to_char = tf.keras.layers.StringLookup(
@@ -140,8 +142,10 @@ class AudiosAndLabelsLoader(base_dataloaders.TextDataLoader):
             lambda: tf.pad(label, [[0, max_label_len - tf.shape(label)[0]]],
                            constant_values=self.pad_token),
             lambda: tf.slice(label, [0], [max_label_len]))
-        label = tf.pad(label, [[1, 0]], constant_values=self.sos_token)
-        label = tf.pad(label, [[0, 1]], constant_values=self.eos_token)
+        if self.sos_token is not None:
+            label = tf.pad(label, [[1, 0]], constant_values=self.sos_token)
+        if self.eos_token is not None:
+            label = tf.pad(label, [[0, 1]], constant_values=self.eos_token)
         label = self.char_to_num(label)
         return label
 
